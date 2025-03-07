@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood History - MindfulChat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gradient-to-r from-blue-50 to-purple-50 min-h-screen flex flex-col items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl p-8">
+        <div class="header">
+            <h1 class="text-3xl font-bold">MindfulChat</h1>
+            <p class="text-lg">Your AI-powered mental health assistant</p>
+        </div>
+        
+        <div class="mt-6">
+            <a href="/" class="text-blue-500 hover:underline">← Back to Chat</a>
+            <h2 class="text-2xl font-semibold mt-4">Your Mood History</h2>
+            <p class="text-gray-700">Track how your mood has changed over time.</p>
+            
+            <div class="mood-history-container">
+                <div class="mood-history-header">
+                    <h3>Your Mood Journey</h3>
+                    <button class="export-button">Export Data</button>
+                </div>
+                
+                {% if moods %}
+                    <div class="mood-summary">
+                        <div class="mood-stat">
+                            <div class="mood-stat-number">{{ moods|length }}</div>
+                            <div class="mood-stat-label">Total Entries</div>
+                        </div>
+                        <div class="mood-stat">
+                            <div class="mood-stat-number">
+                                {% set count = namespace(happy=0) %}
+                                {% for mood in moods %}
+                                    {% if mood.mood == '😊' %}
+                                        {% set count.happy = count.happy + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ (count.happy / moods|length * 100)|round }}%
+                            </div>
+                            <div class="mood-stat-label">Positive Days</div>
+                        </div>
+                        <div class="mood-stat">
+                            <div class="mood-stat-number">
+                                {% set streak = namespace(current=0, best=0) %}
+                                {% for mood in moods %}
+                                    {% if mood.mood == '😊' or mood.mood == '😐' %}
+                                        {% set streak.current = streak.current + 1 %}
+                                        {% if streak.current > streak.best %}
+                                            {% set streak.best = streak.current %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% set streak.current = 0 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ streak.best }}
+                            </div>
+                            <div class="mood-stat-label">Best Streak</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mood-chart">
+                        {% set moods_by_day = {} %}
+                        {% for mood in moods %}
+                            {% set day = mood.timestamp.strftime('%a') %}
+                            {% if day not in moods_by_day %}
+                                {% set moods_by_day = moods_by_day.update({day: []}) %}
+                            {% endif %}
+                            {% set moods_by_day = moods_by_day.update({day: moods_by_day[day] + [mood]}) %}
+                        {% endfor %}
+                        
+                        {% for day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+                            {% if day in moods_by_day %}
+                                {% set moods_count = moods_by_day[day]|length %}
+                                {% set height = (moods_count / moods|length * 100)|round %}
+                                <div class="chart-bar" style="height: {{ height }}%;" data-label="{{ day }}"></div>
+                            {% else %}
+                                <div class="chart-bar" style="height: 0%;" data-label="{{ day }}"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% for mood in moods %}
+                        <div class="mood-entry">
+                            <div class="mood-emoji">{{ mood.mood }}</div>
+                            <div class="mood-details">
+                                <div class="mood-date">{{ mood.timestamp.strftime('%A, %B %d, %Y at %I:%M %p') }}</div>
+                                <div class="mood-notes">{{ mood.notes or 'No notes recorded' }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-moods">
+                        <p>You haven't recorded any moods yet. Start by tracking your mood in the chat!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 MindfulChat | Privacy Policy | Terms of Service</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const exportButton = document.querySelector('.export-button');
+            if (exportButton) {
+                exportButton.addEventListener('click', function() {
+                    let csvContent = "data:text/csv;charset=utf-8,Date,Mood,Notes\n";
+                    
+                    {% if moods %}
+                        {% for mood in moods %}
+                            csvContent += `{{ mood.timestamp.strftime('%Y-%m-%d %H:%M') }},{{ mood.mood }},"{{ mood.notes or '' }}"\n`;
+                        {% endfor %}
+                    {% endif %}
+                    
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "mood_history.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

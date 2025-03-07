@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources - MindfulChat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gradient-to-r from-blue-50 to-purple-50 min-h-screen flex flex-col items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl p-8">
+        <div class="header">
+            <h1 class="text-3xl font-bold">MindfulChat</h1>
+            <p class="text-lg">Your AI-powered mental health assistant</p>
+        </div>
+        
+        <div class="mt-6">
+            <a href="/" class="text-blue-500 hover:underline">← Back to Chat</a>
+            <h2 class="text-2xl font-semibold mt-4">Mental Health Resources</h2>
+            <p class="text-gray-700">A collection of helpful resources for mental health support and education.</p>
+            
+            <div class="resource-container">
+                {% for resource in resources %}
+                <div class="resource-card">
+                    <span class="resource-type type-{{ resource.resource_type }}">{{ resource.resource_type | capitalize }}</span>
+                    <h3>{{ resource.title }}</h3>
+                    <p>{{ resource.description }}</p>
+                    <a href="{{ resource.url }}" target="_blank">Visit Resource</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 MindfulChat | Privacy Policy | Terms of Service</p>
+    </footer>
+</body>
+</html>
